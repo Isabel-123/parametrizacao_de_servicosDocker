@@ -1,0 +1,220 @@
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço SQL Server                           #
+# Service name: SQL SERVER                                                  #
+#                                                                           #
+#***************************************************************************#
+
+version: '3.7'
+services: 
+
+    sql_server:
+        image: mcr.microsoft.com/mssql/server:2017-latest
+        container_name: sql_server
+        restart: always
+        ports: 
+            - "1401:1433"
+        volumes: 
+            - "/home/docker/Desktop/sqlserver-data:/var/opt/ "
+        environment: 
+            SA_PASSWORD: "seguros.123"
+            ACCEPT_EULA: "Y"
+        
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço Tomcat e Camunda                   #
+# Service name: TOMCAT e CAMUNDA                                            #
+#                                                                           #
+#***************************************************************************#
+
+tomcat:
+    image: 'docker.io/bitnami/tomcat:9.0-debian-10'
+    ports:
+           - '8088:8080'
+    volumes:
+           - '/var/opt:/bitnami'
+
+camunda:
+        image: camunda/camunda-bpm-platform:latest
+        container_name: camunda
+        restart: always
+        ports:
+            - "8080:8080"
+
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço Neo4j                                #
+# Service name: NEO4J                                                       #
+#                                                                           #
+#***************************************************************************#
+
+    neo4j:
+        image: neo4j
+        container_name: neo4j
+        restart: always
+        ports:
+            - 7474:7474
+            - 7687:7687
+        volumes:
+            #Linking the volumes to local
+            - ./conf:/conf
+            - ./data:/data
+            - ./import:/import
+            - ./logs:/logs
+            - ./plugins:/plugins
+        environment: 
+            # Raise memory limits
+            - NEO4J_dbms_memory_pagecache_size=1G
+            - NEO4J_dbms.memory.heap.initial_size=1G
+            - NEO4J_dbms_memory_heap_max__size=1G
+
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço Redis                              #
+# Service name: REDIS                                                       #
+#                                                                           #
+#***************************************************************************#
+redis:
+        image: "redis"
+        container_name: redis
+        restart: always
+        ports:
+            - "6379:6379"
+        volumes:
+            - $PWD/redis-data:/var/lib/redis
+            - $PWD/redis.conf:/usr/local/etc/redis/redis.conf      
+        environment:
+            - REDIS_REPLICATION_MODE=master
+            - REDIS_REPLICATION_
+
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço Ngnix                                #
+# Service name: NGNIX                                                       #
+#                                                                           #
+#***************************************************************************#
+ngnix:
+        image: nginx
+        container_name: ngnix
+        restart: always
+        ports:  
+            - 8089:80
+        volumes:
+            - ./templates:/etc/nginx/templates
+      
+        environment:
+            - NGINX_HOST=internacionalseguros.com
+            - NGINX_PORT=80
+  
+
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço Jenkins                              #
+# Service name: JENKINS                                                     #
+#                                                                           #
+#***************************************************************************#
+version: '2'
+services:
+        jenkins:
+            image: "jenkins/jenkins:lts"
+            restart: always
+            ports:
+                - "8012:8080"
+                - "50000:50000"
+            environment:
+                JAVA_OPTS: "-Djava.awt.headless=true"
+            volumes:
+                - /var/jenkins_home
+
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço Kuma                               #
+# Service name: KUMA                                                        #
+#                                                                           #
+#***************************************************************************#
+
+version: '3.5'
+services:
+        kuma:
+            image: "kong-docker-kuma-docker.bintray.io/kuma-cp:0.5.1"
+            restart: always
+            ports:
+                - "5681:5681"
+                - "5683:5683"
+
+
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço RabbitMQ                           #
+# Service name: RABBITMQ                                                    #
+#                                                                           #
+#***************************************************************************#
+version: '2'
+services:   
+        rabbitmq:
+            image: 'docker.io/bitnami/rabbitmq:3.8-debian-10'
+            ports:
+                - '4369:4369'
+                - '5672:5672'
+                - '25672:25672'
+                - '15672:15672'
+            volumes:
+                - '/var/rabbitmq_data:/bitnami'
+
+
+#***************************************************************************#
+#                                                                           #
+# Filename: docker-compose.yml                                              #
+# Description: Parametrização do serviço RabbitMQ                           #
+# Service name: RABBITMQ                                                    #
+#                                                                           #
+#***************************************************************************#
+version: '2'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.5.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-server:5.5.1
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    restart: always
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+
